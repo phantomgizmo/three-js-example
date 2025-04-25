@@ -1,0 +1,24 @@
+body {
+  margin: 0;
+  overflow: hidden;
+}
+canvas {
+  display: block;
+}
+#dropzone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 20%;
+  height: 20%;
+  border: 2px dashed #fff;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-family: sans-serif;
+  font-size: 24px;
+  pointer-events: all;
+  background: rgba(0, 0, 0, 0.3);
+}
