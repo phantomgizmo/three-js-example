@@ -15,7 +15,7 @@ Clone the project
 Go to the project directory
 
 ```bash
-  cd three-js-example-main
+  cd three-js-example
 ```
 
 Install dependencies
