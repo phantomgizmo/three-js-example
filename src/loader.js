@@ -21,6 +21,7 @@ export function setupLoader(scene, transformControls, objects) {
         const model = gltf.scene;
         objects.push(model);
         scene.add(model);
+        model.castShadow = true;
         transformControls.attach(model);
         URL.revokeObjectURL(url);
       });

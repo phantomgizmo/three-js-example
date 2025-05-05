@@ -39,6 +39,7 @@ export function initScene() {
   light_positions.map((pos) => {
     const light = new THREE.DirectionalLight(0xffffff, 1);
     light.position.set(pos.x, pos.y, pos.z);
+    light.castShadow = true;
     scene.add(light);
   });
 
