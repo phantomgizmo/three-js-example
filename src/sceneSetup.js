@@ -10,7 +10,7 @@ export function initScene() {
   scene.add(room);
 
   const grid = new THREE.GridHelper(20, 20, 0xaaaaaa, 0xdddddd);
-  grid.position.y = -1;
+  grid.position.y = -5;
   scene.add(grid);
 
   const camera = new THREE.PerspectiveCamera(
@@ -25,9 +25,32 @@ export function initScene() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  const light = new THREE.DirectionalLight(0xffffff, 1);
-  light.position.set(0, 5, 5);
-  scene.add(light);
+  const light_positions = [
+    { x: 0, y: 5, z: 5 },
+    { x: 0, y: 5, z: -5 },
+    { x: 5, y: 5, z: 0 },
+    { x: -5, y: 5, z: 0 },
+    { x: -5, y: 0, z: 5 },
+    { x: -5, y: 0, z: -5 },
+    { x: 5, y: 0, z: 5 },
+    { x: 5, y: 0, z: -5 },
+  ];
+
+  light_positions.map((pos) => {
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(pos.x, pos.y, pos.z);
+    scene.add(light);
+  });
+
+  // Ambient light: soft, even light from all directions
+  const ambientLight = new THREE.AmbientLight(0xffffff, 10.5);
+  scene.add(ambientLight);
+
+  scene.add(
+    new THREE.AmbientLight(0xffffff, 0.3),
+    new THREE.HemisphereLight(0xffffff, 0x888888, 0.5),
+    new THREE.DirectionalLight(0xffffff, 1).position.set(3, 5, 2)
+  );
 
   const objects = [];
 

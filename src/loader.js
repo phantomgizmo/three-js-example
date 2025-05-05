@@ -20,6 +20,7 @@ export function setupLoader(scene, transformControls, objects) {
       loader.load(url, (gltf) => {
         const model = gltf.scene;
         objects.push(model);
+        model.position.y = -5;
         scene.add(model);
         transformControls.attach(model);
         URL.revokeObjectURL(url);
