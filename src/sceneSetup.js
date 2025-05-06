@@ -44,7 +44,7 @@ export function initScene() {
   });
 
   // Ambient light: soft, even light from all directions
-  const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
   scene.add(ambientLight);
 
   scene.add(

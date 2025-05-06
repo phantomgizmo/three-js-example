@@ -1,7 +1,7 @@
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import * as THREE from "three";
 
-export function setupLoader(scene, transformControls, objects) {
+export function setupLoader(scene, transformControls, objects, appState) {
   const dropzone = document.getElementById("dropzone");
 
   dropzone.addEventListener("dragover", (e) => {
@@ -21,6 +21,10 @@ export function setupLoader(scene, transformControls, objects) {
         const model = gltf.scene;
         objects.push(model);
         scene.add(model);
+        if (appState.highlightBox) scene.remove(appState.highlightBox);
+        appState.highlightBox = new THREE.BoxHelper(model, 0xffcc00);
+        appState.selectedObject = model;
+        scene.add(appState.highlightBox);
         model.castShadow = true;
         transformControls.attach(model);
         URL.revokeObjectURL(url);

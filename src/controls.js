@@ -1,7 +1,7 @@
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 
-export function setupControls(camera, renderer, scene) {
+export function setupControls(camera, renderer, scene, appState) {
   const orbitControls = new OrbitControls(camera, renderer.domElement);
   orbitControls.enableDamping = true;
   orbitControls.dampingFactor = 0.05;
@@ -13,11 +13,16 @@ export function setupControls(camera, renderer, scene) {
   scene.add(transformControls);
 
   window.addEventListener("keydown", (e) => {
-    if (e.key === "t" && !e.ctrlKey) transformControls.setMode("translate");
+    if (e.key === "t") transformControls.setMode("translate");
     if (e.key === "r") transformControls.setMode("rotate");
     if (e.key === "s") transformControls.setMode("scale");
     if (e.key === "g") {
       transformControls.detach();
+      appState.selectedObject = null;
+      if (appState.highlightBox) {
+        scene.remove(appState.highlightBox);
+      }
+      appState.highlightBox = null;
     }
   });
 

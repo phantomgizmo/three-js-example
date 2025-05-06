@@ -5,12 +5,15 @@ export function setupInteraction(
   renderer,
   scene,
   objects,
-  transformControls
+  transformControls,
+  appState
 ) {
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
 
   window.addEventListener("click", (event) => {
+    if (!event.ctrlKey) return;
+
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
@@ -23,7 +26,18 @@ export function setupInteraction(
       while (parent.parent && !objects.includes(parent)) {
         parent = parent.parent;
       }
+
+      if (appState.selectedObject === parent) return;
+
       transformControls.attach(parent);
+      appState.selectedObject = parent;
+
+      // Remove current highlighBox
+      scene.remove(appState.highlightBox);
+
+      // Create new highlightBox for selected object
+      appState.highlightBox = new THREE.BoxHelper(parent, 0xffff00);
+      scene.add(appState.highlightBox);
     }
   });
 }
