@@ -1,22 +1,22 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
+
+import SimpleAccordion from '@/components/ui/SimpleAccordion';
+import SimpleCarousel from '@/components/ui/SimpleCarousel';
 
 import * as THREE from 'three';
 
-// import { useControls } from '@/hooks/useControls';
-// import { useScene } from '@/hooks/useScene';
-
-// import useAnimate from './hooks/useAnimate';
 import { Object3D, Scene, Camera, WebGLRenderer, BoxHelper } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
-import { GLTFLoader } from 'three/examples/jsm/Addons.js';
+import { GLTFLoader, type GLTF } from 'three/examples/jsm/Addons.js';
 
-import { getModelByFilename } from '@/services/supabase/3dmodels';
+import { getModelByFilename, getModels } from '@/services/supabase/3dmodels';
 
 const Simulation = () => {
   const canvasContainerRef = useRef<HTMLCanvasElement>(null);
   const objectsRef = useRef<{ [id: string]: Object3D }>({});
-  // const { sceneRef, cameraRef, rendererRef } = useScene(canvasRef);
+  const [modelDetails, setModelDetails] = useState<any>([]);
+  const loaderRef = useRef(new GLTFLoader());
 
   const rendererRef = useRef<WebGLRenderer>(null);
   const sceneRef = useRef<Scene>(null);
@@ -27,9 +27,52 @@ const Simulation = () => {
   const transformControls = useRef<TransformControls>(null);
   const orbitControlsRef = useRef<OrbitControls>(null);
 
+  const fetchObject = (
+    objectUrl: string
+  ): Promise<{ result: GLTF | null; error: Error | null }> => {
+    return new Promise((resolve) => {
+      loaderRef.current.load(
+        objectUrl,
+        (gltf) => {
+          resolve({ result: gltf, error: null });
+        },
+        undefined,
+        (err) => {
+          resolve({
+            result: null,
+            error: err instanceof Error ? err : new Error('Unkown error')
+          });
+        }
+      );
+    });
+  };
+
+  const addObject = (objectToLoad: Object3D) => {
+    objectToLoad.castShadow = true;
+    objectsRef.current[objectToLoad.uuid] = objectToLoad;
+    sceneRef.current?.add(objectToLoad);
+  };
+
+  const loadObject = async (objectUrl: string) => {
+    const { result, error } = await fetchObject(objectUrl);
+    if (result) {
+      addObject(result.scene);
+    } else {
+      console.log(error);
+    }
+  };
+
   useEffect(() => {
-    const objects = objectsRef.current;
+    // const objects = objectsRef.current;
     const canvasContainer = canvasContainerRef.current;
+
+    getModels()
+      .then((models) => {
+        if (models) setModelDetails(models);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
 
     if (canvasContainerRef?.current && !rendererRef.current) {
       const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -84,18 +127,24 @@ const Simulation = () => {
 
       // Load car
       getModelByFilename('pickup_car.glb')
-        .then((objBlob) => {
+        .then(async (objBlob) => {
           if (objBlob) {
             const url = URL.createObjectURL(objBlob);
-            const loader = new GLTFLoader();
-            loader.load(url, (gltf) => {
-              const model = gltf.scene;
-              objects[model.id] = model;
-              model.position.y = -2.5;
-              scene.add(model);
-              model.castShadow = true;
-              URL.revokeObjectURL(url);
-            });
+            // CHANGE HARDCODED NAME TO SOMETHING LESS COUPLED
+            const { result, error } = await fetchObject(url);
+            if (result) {
+              const model = result.scene;
+              model.name = 'pickup_car';
+              if (!('pickup_car' in objectsRef.current)) {
+                model.position.y = -2.5;
+                objectsRef.current['pickup_car'] = model;
+                sceneRef.current?.add(model);
+                model.castShadow = true;
+              }
+            } else {
+              console.log(error);
+            }
+            URL.revokeObjectURL(url);
           }
         })
         .catch((err) => console.log(err));
@@ -217,8 +266,26 @@ const Simulation = () => {
     loop();
 
     return () => {
-      Object.values(objects).map((object) => {
-        sceneRef.current?.remove(object);
+      // Object.values(objects).map((object) => {
+      //   sceneRef.current?.remove(object);
+      //   object.traverse((child) => {
+      //     if ((child as THREE.Mesh).isMesh === true) {
+      //       const mesh = child as THREE.Mesh;
+
+      //       if (mesh.geometry) mesh.geometry.dispose();
+
+      //       const materials = Array.isArray(mesh.material)
+      //         ? mesh.material
+      //         : [mesh.material];
+      //       materials.map((material) => {
+      //         material.dispose();
+      //       });
+      //     }
+      //     if (child.parent) child.parent.remove(child);
+      //   });
+      // });
+      const tmpRemove: Object3D[] = [];
+      sceneRef.current?.traverse((object) => {
         object.traverse((child) => {
           if ((child as THREE.Mesh).isMesh === true) {
             const mesh = child as THREE.Mesh;
@@ -232,8 +299,11 @@ const Simulation = () => {
               material.dispose();
             });
           }
-          if (child.parent) child.parent.remove(child);
+          if (child.parent) tmpRemove.push(child);
         });
+      });
+      tmpRemove.forEach((object) => {
+        object.parent?.remove(object);
       });
       objectsRef.current = {};
       sceneRef.current = null;
@@ -244,7 +314,29 @@ const Simulation = () => {
     };
   }, [canvasContainerRef]);
 
-  return <section id="canvasContainer" ref={canvasContainerRef}></section>;
+  return (
+    <section id="canvasContainer" ref={canvasContainerRef}>
+      <div className="absolute top-0 left-0 z-1000 p-4">
+        <SimpleAccordion title="Models" className="w-54 bg-transparent">
+          <SimpleCarousel>
+            {modelDetails.map((model, idx) => (
+              <div
+                key={idx}
+                className="h-16 w-full"
+                onClick={() => loadObject(model.model_url)}
+              >
+                <img
+                  className="h-auto w-full object-cover"
+                  src={model.thumbnail}
+                  alt=""
+                />
+              </div>
+            ))}
+          </SimpleCarousel>
+        </SimpleAccordion>
+      </div>
+    </section>
+  );
 };
 
 export default Simulation;

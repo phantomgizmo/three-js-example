@@ -1,5 +1,14 @@
 import supabaseClient from '..';
 
+const getModels = async () => {
+  return supabaseClient
+    .from('3dmodels')
+    .select()
+    .then((res) => {
+      return res.data;
+    });
+};
+
 const getModelByFilename = async (filename: string) => {
   return supabaseClient.storage
     .from('3dmodels')
@@ -13,4 +22,4 @@ const getModelByFilename = async (filename: string) => {
     });
 };
 
-export { getModelByFilename };
+export { getModelByFilename, getModels };
